@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Vädervarnaren</title>
+<style>
+/* Inline CSS here */
+#map {
+    width: 60%;
+    height: 800px;
+    margin: auto;
+    border: 4px solid #333;
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+#district-selected, #active-warnings {
+    margin: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+/* Bredda alla popups på kartan */
+.leaflet-popup-content {
+    width: 500px; /* eller vilken bredd du föredrar */
+}
+#header-text, #footer-text {
+    text-align: center;
+    margin: 10px 0;
+    padding: 5px;
+    font-size: 1.2em;
+}
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('img/varning.webp') no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    padding: 20px;
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+</head>
+<body>
+<div id="header-text">
+    Välkommen till Vädervarnaren - Se de senaste vädervarningarna över Sverige
+</div>
+<div id="map"></div>
+<div id="footer-text">
+    Information uppdateras kontinuerligt från <a href="http://www.smhi.se" target="_blank">SMHI</a>. Förbered dig alltid på oväntade väderändringar.
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<script>
+
+// Definiera smhi-objektet för att hålla alla våra funktioner och data
+const smhi = {
+  map: null,
+  districtViews: null,
+  warningViews: null,
+  activeArea: [],
+};
+
+// Definiera lagergrupper för olika varningsnivåer
+const redWarningsLayer = L.layerGroup();
+const orangeWarningsLayer = L.layerGroup();
+const yellowWarningsLayer = L.layerGroup();
+
+function initMap() {
+  const bounds = L.latLngBounds(L.latLng(51, 3), L.latLng(72, 35));
+  smhi.map = L.map('map', {
+    zoomControl: true,
+    minZoom: 4,
+    maxZoom: 12,
+    maxBounds: bounds
+  }).setView([63, 17], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsgivare'
+  }).addTo(smhi.map);
+  redWarningsLayer.addTo(smhi.map);
+  orangeWarningsLayer.addTo(smhi.map);
+  yellowWarningsLayer.addTo(smhi.map);
+}
+
+function getWarningViews() {
+  fetch('https://opendata-download-warnings.smhi.se/ibww/api/version/1/warning.json')
+    .then(response => response.json())
+    .then(data => processWarningViews(data))
+    .catch(error => console.error('Fel vid hämtning av varningsdata:', error));
+}
+
+function processWarningViews(warningsData) {
+  warningsData.forEach(warning => {
+    warning.warningAreas.forEach(warningArea => {
+      let warningLayerGroup;
+      switch (warningArea.warningLevel.code) {
+        case 'RED':
+          warningLayerGroup = redWarningsLayer;
+          break;
+        case 'ORANGE':
+          warningLayerGroup = orangeWarningsLayer;
+          break;
+        case 'YELLOW':
+          warningLayerGroup = yellowWarningsLayer;
+          break;
+        default:
+          return;
+      }
+      const warningLayer = L.geoJSON(warningArea.area, {
+        style: {
+          color: '#000',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.5,
+          fillColor: getBackgroundColor(warningArea.warningLevel.code)
+        }
+      }).bindPopup(
+        `<strong>${warningArea.areaName.sv}</strong><br><br>` +
+		`<strong>${new Date(warningArea.approximateStart).toLocaleString()} - ${new Date(warningArea.approximateEnd).toLocaleString()}</strong><br><br>` +
+		`<strong>Nivå: ${warningArea.warningLevel.sv}</strong><br>` +
+		`<strong>${warningArea.eventDescription.sv}</strong><br><br>` +
+		`${warningArea.descriptions.map(desc => desc.text.sv).join('<br>')}`
+      );
+      warningLayerGroup.addLayer(warningLayer);
+    });
+  });
+}
+
+function getBackgroundColor(code) {
+  switch (code) {
+    case 'RED': return '#D61720';
+    case 'ORANGE': return '#EB7500';
+    case 'YELLOW': return '#FDEB1B';
+    default: return '#FFFFFF';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  getWarningViews();
+  L.control.layers(null, {
+    'Röda Varningar': redWarningsLayer,
+    'Orangea Varningar': orangeWarningsLayer,
+    'Gula Varningar': yellowWarningsLayer
+  }).addTo(smhi.map);
+});
+</script>
+</body>
+</html>

@@ -7,7 +7,7 @@
 /* Inline CSS here */
 #map {
     width: 60%;
-    height: 800px;
+    height: 75vh;
     margin: auto;
     border: 4px solid #333;
     border-radius: 15px;
@@ -29,7 +29,16 @@
     margin: 10px 0;
     padding: 5px;
     font-size: 1.2em;
+    font-weight: bold; /* Gör texten tjockare */
 }
+#info-text {
+    text-align: center;
+    margin: 10px 0;
+    padding: 5px;
+    font-size: 0.6 em;
+    
+}
+
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('img/varning.webp') no-repeat center center fixed;
@@ -49,6 +58,13 @@ body {
 <div id="map"></div>
 <div id="footer-text">
     Information uppdateras kontinuerligt från <a href="http://www.smhi.se" target="_blank">SMHI</a>. Förbered dig alltid på oväntade väderändringar.
+</div>
+<div id="footer-text">
+    Läs mer om  <a href="https://www.krisinformation.se/detta-kan-handa/storm" target="_blank">stormar och oväder</a> på <a href="https://www.krisinformation.se/" target="_blank">krisinformation.se</a><br>
+	<a href="https://www.msb.se/sv/rad-till-privatpersoner/naturolyckor/">Råd till privatpersoner</a> kan du hitta på <a href="https://www.msb.se/" target="_blank">MSB.se</a><br><br>
+	</div>
+<div id="info-text">
+Bakgrundsbilden skapades av DALL-E 3, prompten bestod av källoden samt "Kan du hjälpa mig med en stilren dämpad bakgrundsbild som passar temat, gärna med symboler för regn,snö,blixtar med mera och linjer mellan symbolerna." 
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
@@ -74,7 +90,7 @@ function initMap() {
     minZoom: 4,
     maxZoom: 12,
     maxBounds: bounds
-  }).setView([63, 17], 5);
+  }).setView([63, 17], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> bidragsgivare'
   }).addTo(smhi.map);
